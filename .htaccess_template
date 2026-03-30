@@ -1,0 +1,20 @@
+# ─────────────────────────────────────────
+# .htaccess — Configuración de Proxy para Django + WebSockets (E2EE)
+# ─────────────────────────────────────────
+
+RewriteEngine On
+
+# 1. Detectar peticiones de WebSockets (Upgrade: websocket)
+# Redirigir el tráfico de /ws/ al servidor Daphne (Puerto 8001)
+RewriteCond %{HTTP:Upgrade} =websocket [NC]
+RewriteRule ^ws/(.*) http://127.0.0.1:8001/ws/$1 [P,L]
+
+# 2. Configuración estándar para Passenger (Django WSGI)
+# Esto permite que el resto de la API siga funcionando normalmente
+PassengerAppRoot "/home/TU_USUARIO/Autenticacion"
+PassengerBaseURI "/"
+PassengerPython "/home/TU_USUARIO/virtualenv/Autenticacion/3.11/bin/python"
+
+# 3. Forzar HTTPS por seguridad (Privacidad Extrema)
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]

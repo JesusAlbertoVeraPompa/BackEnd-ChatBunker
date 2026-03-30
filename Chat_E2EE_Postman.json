@@ -1,0 +1,65 @@
+{
+	"info": {
+		"_postman_id": "e2ee-chat-test",
+		"name": "Django Auth & Chat E2EE",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@test.com\",\n    \"password\": \"TuPasswordSegura\"\n}",
+							"options": { "raw": { "language": "json" } }
+						},
+						"url": { "raw": "http://localhost:8000/api/v1/auth/login/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "auth", "login", ""] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Chat REST",
+			"item": [
+				{
+					"name": "List Conversations",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{access_token}}", "type": "text" }
+						],
+						"url": { "raw": "http://localhost:8000/api/v1/chat/conversations/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "chat", "conversations", ""] }
+					}
+				},
+				{
+					"name": "Chat History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{access_token}}", "type": "text" }
+						],
+						"url": { "raw": "http://localhost:8000/api/v1/chat/conversations/ID_CONVERSACION/history/", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["api", "v1", "chat", "conversations", "ID_CONVERSACION", "history", ""] }
+					}
+				}
+			]
+		},
+		{
+			"name": "Chat WebSockets",
+			"item": [
+				{
+					"name": "Connect to Chat",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": { "raw": "ws://localhost:8000/ws/chat/ID_CONVERSACION/?token={{access_token}}", "protocol": "ws", "host": ["localhost"], "port": "8000", "path": ["ws", "chat", "ID_CONVERSACION", ""], "query": [{ "key": "token", "value": "{{access_token}}" }] }
+					}
+				}
+			]
+		}
+	]
+}
