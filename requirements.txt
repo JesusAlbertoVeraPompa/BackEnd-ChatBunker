@@ -37,6 +37,8 @@ Pillow==11.1.0
 django-filter==24.2
 django-extensions==3.2.3
 django-debug-toolbar==4.4.6
+django-ratelimit==4.1.0
+setuptools
 
 # Testing
 pytest==8.2.2
