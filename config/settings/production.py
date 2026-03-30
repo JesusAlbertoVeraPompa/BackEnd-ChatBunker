@@ -16,7 +16,7 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
 # Hosts permitidos
-ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv(), default="localhost")
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", cast=Csv(), default="backend-chatbunker.onrender.com,localhost")
 
 # CORS: Aquí debes poner la URL de tu GitHub Pages
 CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", cast=Csv(), default="http://localhost:3000")
