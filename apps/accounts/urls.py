@@ -31,6 +31,7 @@ urlpatterns = [
 
     # ── Social Login ──────────────────────────────────
     path("social/", SocialLoginView.as_view(), name="social-login"),
+    path("google/", SocialLoginView.as_view(), name="google-login"),
 
     # ── Phone Verification ────────────────────────────
     path("verify/send/", SendVerificationCodeView.as_view(), name="verify-send"),
