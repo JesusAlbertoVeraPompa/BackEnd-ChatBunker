@@ -35,6 +35,8 @@ django-anymail==11.0.1
 # Utilities
 Pillow==11.1.0
 django-filter==24.2
+django-extensions==3.2.3
+django-debug-toolbar==4.4.6
 
 # Testing
 pytest==8.2.2
