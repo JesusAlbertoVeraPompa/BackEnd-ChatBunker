@@ -35,17 +35,6 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # ─────────────────────────────────────────
-# DATABASE (MySQL en Render)
-# ─────────────────────────────────────────
-db_from_env = dj_database_url.config(conn_max_age=600, ssl_require=False)
-if db_from_env:
-    DATABASES["default"].update(db_from_env)
-    DATABASES["default"]["OPTIONS"] = {
-        "charset": "utf8mb4",
-        "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
-    }
-
-# ─────────────────────────────────────────
 # CHANNEL LAYERS (Redis en Render)
 # ─────────────────────────────────────────
 REDIS_URL = config("REDIS_URL", default=None)
@@ -68,6 +57,18 @@ STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "{levelname} {asctime} {module} {process:d} {thread:d} {message}",
+            "style": "{",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose",
+        },
+    },
     "root": {
         "handlers": ["console"],
         "level": "WARNING",
@@ -80,3 +81,4 @@ LOGGING = {
         },
     },
 }
+
