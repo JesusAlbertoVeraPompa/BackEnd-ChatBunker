@@ -1,6 +1,14 @@
 from rest_framework import serializers
-from .models import Conversation, Message, Media
+from .models import Conversation, Message, Media, ChatInvitation
 from apps.users.serializers import UserDetailSerializer
+
+class ChatInvitationSerializer(serializers.ModelSerializer):
+    sender = UserDetailSerializer(read_only=True)
+    receiver = UserDetailSerializer(read_only=True)
+
+    class Meta:
+        model = ChatInvitation
+        fields = ['id', 'sender', 'receiver', 'status', 'created_at']
 
 class MessageSerializer(serializers.ModelSerializer):
     sender_email = serializers.EmailField(source='sender.email', read_only=True)

@@ -5,11 +5,74 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from .models import Conversation, Message, Media
-from .serializers import ConversationSerializer, MessageSerializer
+from .models import Conversation, Message, Media, ChatInvitation
+from .serializers import ConversationSerializer, MessageSerializer, ChatInvitationSerializer
+from apps.accounts.models import User
 import os
 
 signer = Signer()
+
+class ChatInvitationView(APIView):
+    """
+    Maneja el envío de invitaciones de chat.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Lista las invitaciones recibidas que aún están pendientes
+        invitations = ChatInvitation.objects.filter(receiver=request.user, status=ChatInvitation.InvitationStatus.PENDING)
+        serializer = ChatInvitationSerializer(invitations, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    def post(self, request):
+        # Enviar una nueva invitación
+        target_email = request.data.get('email')
+        if not target_email:
+            return Response({"error": "Debe proporcionar el email del usuario."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        target_user = get_object_or_404(User, email=target_email, is_active=True)
+        
+        if target_user == request.user:
+            return Response({"error": "No puedes invitarte a ti mismo."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verificar si ya existe un chat entre ambos
+        already_friends = Conversation.objects.filter(participants=request.user).filter(participants=target_user).exists()
+        if already_friends:
+            return Response({"error": "Ya tienes una conversación con este usuario."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Crear invitación (o recuperar si ya estaba pendiente)
+        invitation, created = ChatInvitation.objects.get_or_create(
+            sender=request.user,
+            receiver=target_user,
+            defaults={'status': ChatInvitation.InvitationStatus.PENDING}
+        )
+
+        if not created and invitation.status == ChatInvitation.InvitationStatus.REJECTED:
+            # Reintentar si fue rechazada antes
+            invitation.status = ChatInvitation.InvitationStatus.PENDING
+            invitation.save()
+
+        return Response(ChatInvitationSerializer(invitation).data, status=status.HTTP_201_CREATED)
+
+class AcceptInvitationView(APIView):
+    """
+    Acepta una invitación y crea la conversación de chat.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        invitation = get_object_or_404(ChatInvitation, id=pk, receiver=request.user, status=ChatInvitation.InvitationStatus.PENDING)
+        
+        # Iniciar transacción atómica
+        from django.db import transaction
+        with transaction.atomic():
+            invitation.status = ChatInvitation.InvitationStatus.ACCEPTED
+            invitation.save()
+
+            # Crear la conversación si no existe (doble check)
+            conversation, created = Conversation.objects.get_or_create_for_participants(invitation.sender, invitation.receiver)
+        
+        return Response(ConversationSerializer(conversation, context={'request': request}).data)
 
 class ConversationListView(APIView):
     """
