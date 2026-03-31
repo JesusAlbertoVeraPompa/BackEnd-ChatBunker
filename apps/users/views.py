@@ -62,22 +62,25 @@ class UserSearchView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        query = request.query_params.get('q', '').strip()
+        query = request.query_params.get('q', '').strip().lower()
         if len(query) < 3:
             return success_response(message="Consulta demasiado corta", data=[])
             
+        # Buscamos usuarios activos que coincidan con el email o el nombre completo
+        from django.db.models import Q
         users = User.objects.filter(
-            email__icontains=query, 
+            Q(email__icontains=query) | Q(first_name__icontains=query) | Q(last_name__icontains=query),
             is_active=True
         ).exclude(id=request.user.id)[:10]
         
-        data = [
-            {
+        data = []
+        for u in users:
+            data.append({
                 "id": str(u.id), 
                 "email": u.email, 
-                "full_name": u.full_name
-            } for u in users
-        ]
+                "full_name": f"{u.first_name} {u.last_name}".strip() or u.email
+            })
+            
         return success_response(
             message=f"Se encontraron {len(data)} usuarios.",
             data=data
