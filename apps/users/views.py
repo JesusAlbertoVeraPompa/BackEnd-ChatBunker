@@ -26,6 +26,7 @@ from django.contrib.auth.models import Group
 from django.db.models import F
 from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
@@ -63,7 +64,7 @@ class UserSearchView(APIView):
     def get(self, request):
         query = request.query_params.get('q', '').strip()
         if len(query) < 3:
-            return Response([], status=status.HTTP_200_OK)
+            return success_response(message="Consulta demasiado corta", data=[])
             
         users = User.objects.filter(
             email__icontains=query, 
@@ -77,7 +78,10 @@ class UserSearchView(APIView):
                 "full_name": u.full_name
             } for u in users
         ]
-        return Response(data)
+        return success_response(
+            message=f"Se encontraron {len(data)} usuarios.",
+            data=data
+        )
 
 # ─────────────────────────────────────────
 # USER LIST (Admin / Personal)
