@@ -2,7 +2,7 @@
 Production settings for deployment (Render, etc.).
 """
 import os
-#import dj_database_url
+import dj_database_url
 from decouple import Csv, config
 from .base import *  # noqa: F401, F403
 
@@ -37,7 +37,6 @@ CSRF_TRUSTED_ORIGINS = [
 # ─────────────────────────────────────────
 # DATABASE (MySQL en Render)
 # ─────────────────────────────────────────
-"""
 db_from_env = dj_database_url.config(conn_max_age=600, ssl_require=False)
 if db_from_env:
     DATABASES["default"].update(db_from_env)
@@ -45,7 +44,7 @@ if db_from_env:
         "charset": "utf8mb4",
         "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
     }
-"""
+
 # ─────────────────────────────────────────
 # CHANNEL LAYERS (Redis en Render)
 # ─────────────────────────────────────────
