@@ -412,6 +412,9 @@ class SocialLoginSerializer(serializers.Serializer):
         try:
             from allauth.socialaccount.providers.facebook.views import FacebookOAuth2Adapter
             from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+            from allauth.socialaccount.helpers import complete_social_login
+            from allauth.socialaccount.models import SocialToken, SocialApp
+            from django.conf import settings
 
             # Mapa de proveedores a sus adaptadores de django-allauth
             adapter_map = {
@@ -420,15 +423,27 @@ class SocialLoginSerializer(serializers.Serializer):
             }
             AdapterClass = adapter_map[provider]  # noqa: N806
 
-            from allauth.socialaccount.helpers import complete_social_login
-            from allauth.socialaccount.models import SocialToken, SocialApp
-
             # Construye la request mínima para django-allauth
             request = self.context.get("request")
             adapter = AdapterClass(request)
 
-            # Obtiene la configuración del proveedor desde la BD (SocialApp de allauth)
-            app   = SocialApp.objects.get(provider=provider)
+            # [FIX] Intenta obtener la configuración desde la BD, si no, usa settings
+            try:
+                app = SocialApp.objects.get(provider=provider)
+            except SocialApp.DoesNotExist:
+                # Si no está en BD, intentamos usar lo definido en SOCIALACCOUNT_PROVIDERS (allauth)
+                social_providers = getattr(settings, "SOCIALACCOUNT_PROVIDERS", {})
+                provider_cfg = social_providers.get(provider, {}).get("APP", {})
+                client_id = provider_cfg.get("client_id")
+                secret = provider_cfg.get("secret")
+
+                if not client_id:
+                    logger.error("SocialApp not found in DB and no client_id in settings for %s", provider)
+                    raise serializers.ValidationError(f"Proveedor {provider} no está configurado.")
+                
+                # Crea un objeto virtual (no guardado en BD) para allauth
+                app = SocialApp(provider=provider, client_id=client_id, secret=secret)
+
             token = SocialToken(app=app, token=access_token)
 
             # Valida el token con el proveedor externo y obtiene/crea el usuario
@@ -450,15 +465,10 @@ class SocialLoginSerializer(serializers.Serializer):
                 )
 
         except serializers.ValidationError:
-            # Re-lanza errores de validación propios (no los oculta)
             raise
-        except SocialApp.DoesNotExist:
-            # El proveedor no está configurado en la BD de allauth
-            raise serializers.ValidationError("Proveedor social no configurado.")
         except Exception as exc:
             # Error externo (token inválido, red, etc.) — se loguea internamente
-            # pero se retorna mensaje genérico para no exponer detalles
-            logger.error("Social login error [%s]: %s", provider, exc)
+            logger.error("Social login error [%s]: %s", provider, str(exc))
             raise serializers.ValidationError("Token social inválido o autenticación fallida.")
 
         return attrs

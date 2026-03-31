@@ -63,10 +63,9 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 # MIDDLEWARE
 # ─────────────────────────────────────────
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -335,8 +334,8 @@ FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:3000")
 # correctamente en ["http://localhost:3000", "http://localhost:8080"].
 CORS_ALLOWED_ORIGINS = config(
     "CORS_ALLOWED_ORIGINS",
-    default="http://127.0.0.1:8000",
-    cast=Csv(),  # ← CORRECCIÓN: parsea la variable de entorno como lista
+    default="http://localhost:3000,http://127.0.0.1:3000,https://jesusalbertoverapompa.github.io",
+    cast=Csv(),
 )
 CORS_ALLOW_CREDENTIALS = False
 
