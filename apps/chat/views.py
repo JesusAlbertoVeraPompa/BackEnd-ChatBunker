@@ -121,7 +121,17 @@ class ChatHistoryView(APIView):
 
     def get(self, request, pk):
         conversation = get_object_or_404(Conversation, id=pk, participants=request.user)
-...
+        messages = conversation.messages.all().order_by('timestamp')
+        
+        # Filtrar mensajes borrados por este usuario
+        participants = list(conversation.participants.order_by('id'))
+        is_u1 = (request.user == participants[0])
+        
+        if is_u1:
+            filtered_msgs = messages.exclude(deleted_by_u1=True)
+        else:
+            filtered_msgs = messages.exclude(deleted_by_u2=True)
+            
         serializer = MessageSerializer(filtered_msgs, many=True, context={'request': request})
         return Response(serializer.data)
 
