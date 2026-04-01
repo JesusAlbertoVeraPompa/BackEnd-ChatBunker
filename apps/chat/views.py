@@ -33,10 +33,14 @@ class ChatInvitationView(APIView):
     def post(self, request):
         # Enviar una nueva invitación
         target_email = request.data.get('email')
-        if not target_email:
-            return error_response(message="Debe proporcionar el email.", status_code=status.HTTP_400_BAD_REQUEST)
+        target_user_id = request.data.get('user_id')
         
-        target_user = get_object_or_404(User, email=target_email, is_active=True)
+        if target_email:
+            target_user = get_object_or_404(User, email=target_email, is_active=True)
+        elif target_user_id:
+            target_user = get_object_or_404(User, id=target_user_id, is_active=True)
+        else:
+            return error_response(message="Debe proporcionar el email o ID del usuario.", status_code=status.HTTP_400_BAD_REQUEST)
         
         if target_user == request.user:
             return error_response(message="No puedes invitarte a ti mismo.", status_code=status.HTTP_400_BAD_REQUEST)
