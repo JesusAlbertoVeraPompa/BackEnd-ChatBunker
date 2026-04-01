@@ -48,7 +48,7 @@ class JWTAuthRateLimitMiddleware:
             try:
                 # Valida el token
                 access_token = AccessToken(token_str)
-                user_id = access_token.payload.get('user_id')
+                user_id = access_token['user_id']
                 if user_id:
                     scope['user'] = await get_user(user_id)
                 else:
