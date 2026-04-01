@@ -159,7 +159,10 @@ class ChatHistoryView(APIView):
             filtered_msgs = messages.exclude(deleted_by_u2=True)
             
         serializer = MessageSerializer(filtered_msgs, many=True, context={'request': request})
-        return Response(serializer.data)
+        return success_response(
+            message="Historial obtenido.",
+            data=serializer.data
+        )
 
     def delete(self, request, pk):
         """
@@ -225,3 +228,4 @@ class MediaDownloadView(APIView):
             return Response({"error": "Enlace invalido o expirado."}, status=status.HTTP_403_FORBIDDEN)
         except Exception:
             return Response({"error": "No se pudo procesar el enlace de descarga."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+_INTERNAL_SERVER_ERROR)
