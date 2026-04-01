@@ -29,24 +29,30 @@ class JWTAuthRateLimitMiddleware:
         cache_key = f"ws_ratelimit_{client_ip}"
         requests_count = cache.get(cache_key, 0)
         
-        if requests_count > 100: # Límite de 100 handshakes por IP/hora
+        if requests_count > 1000: # Límite aumentado a 1000 por hora
             logger.warning("WebSocket Rate limit exceeded for IP %s", client_ip)
-            return None # Cierra la conexión inmediatamente
+            return None 
 
         cache.set(cache_key, requests_count + 1, timeout=3600)
 
         # 2. JWT Validation
-        query_string = parse_qs(scope['query_string'].decode())
-        token_str = query_string.get('token', [None])[0]
+        try:
+            query_string = parse_qs(scope['query_string'].decode())
+            token_str = query_string.get('token', [None])[0]
+        except Exception:
+            token_str = None
 
         if not token_str:
             scope['user'] = AnonymousUser()
         else:
             try:
-                # Valida el token sin tocar la BD (vía SimpleJWT)
+                # Valida el token
                 access_token = AccessToken(token_str)
-                user_id = access_token['user_id']
-                scope['user'] = await get_user(user_id)
+                user_id = access_token.payload.get('user_id')
+                if user_id:
+                    scope['user'] = await get_user(user_id)
+                else:
+                    scope['user'] = AnonymousUser()
             except Exception as exc:
                 logger.error("WebSocket JWT validation failed: %s", exc)
                 scope['user'] = AnonymousUser()
