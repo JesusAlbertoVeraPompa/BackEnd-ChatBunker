@@ -46,9 +46,11 @@ class JWTAuthRateLimitMiddleware:
             scope['user'] = AnonymousUser()
         else:
             try:
-                # Valida el token
+                # Valida el token de forma directa
                 access_token = AccessToken(token_str)
-                user_id = access_token['user_id']
+                # En algunas versiones de SimpleJWT el ID está en payload, en otras es un diccionario directo
+                user_id = access_token.get('user_id') or getattr(access_token, 'payload', {}).get('user_id')
+                
                 if user_id:
                     scope['user'] = await get_user(user_id)
                 else:

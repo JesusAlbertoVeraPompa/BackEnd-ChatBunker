@@ -343,6 +343,11 @@ CORS_ALLOWED_ORIGINS = config(
 )
 CORS_ALLOW_CREDENTIALS = False
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://jesusalbertoverapompa.github.io",
+    "https://backend-chatbunker.onrender.com",
+]
+
 # Deshabilita las vistas HTML de allauth (usamos nuestra propia API)
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = False
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
