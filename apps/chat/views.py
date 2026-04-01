@@ -86,7 +86,10 @@ class AcceptInvitationView(APIView):
             # Crear la conversación si no existe (doble check)
             conversation, created = Conversation.objects.get_or_create_for_participants(invitation.sender, invitation.receiver)
         
-        return Response(ConversationSerializer(conversation, context={'request': request}).data)
+        return success_response(
+            message="Invitación aceptada y chat creado.",
+            data=ConversationSerializer(conversation, context={'request': request}).data
+        )
 
 class RejectInvitationView(APIView):
     """
