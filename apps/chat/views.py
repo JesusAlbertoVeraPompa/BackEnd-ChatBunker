@@ -111,7 +111,8 @@ class ConversationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        conversations = request.user.conversations.all().order_by('-created_at')
+        # Consulta ultra-explícita por ID de usuario para evitar problemas de instancia
+        conversations = Conversation.objects.filter(participants__id=request.user.id).distinct().order_by('-created_at')
         serializer = ConversationSerializer(conversations, many=True, context={'request': request})
         return success_response(
             message="Conversaciones obtenidas.",

@@ -37,10 +37,18 @@ class ConversationSerializer(serializers.ModelSerializer):
 
     def get_last_message(self, obj):
         # Solo muestra el último mensaje que no haya sido borrado por el usuario actual
-        user = self.context.get('request').user
+        request = self.context.get('request')
+        if not request or not request.user:
+            return None
+            
+        user = request.user
         participants = list(obj.participants.order_by('id'))
         
-        is_u1 = (user == participants[0])
+        if not participants:
+            return None
+
+        # Identificar si el usuario es u1 o u2 comparando IDs
+        is_u1 = (str(user.id) == str(participants[0].id))
         
         last_msg = obj.messages.all().order_by('-timestamp').first()
         if not last_msg:
