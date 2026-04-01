@@ -113,7 +113,10 @@ class ConversationListView(APIView):
     def get(self, request):
         conversations = request.user.conversations.all().order_by('-created_at')
         serializer = ConversationSerializer(conversations, many=True, context={'request': request})
-        return Response(serializer.data)
+        return success_response(
+            message="Conversaciones obtenidas.",
+            data=serializer.data
+        )
 
     def post(self, request):
         from apps.accounts.models import User
@@ -231,3 +234,4 @@ class MediaDownloadView(APIView):
             return Response({"error": "Enlace invalido o expirado."}, status=status.HTTP_403_FORBIDDEN)
         except Exception:
             return Response({"error": "No se pudo procesar el enlace de descarga."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+NAL_SERVER_ERROR)
