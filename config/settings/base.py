@@ -323,6 +323,9 @@ TWILIO_PHONE_NUMBER = config("TWILIO_PHONE_NUMBER", default="")
 # ─────────────────────────────────────────
 FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:3000")
 
+# Tiempo de vida (segundos) para URLs firmadas de descarga de media cifrada.
+MEDIA_URL_SIGNED_TTL_SECONDS = config("MEDIA_URL_SIGNED_TTL_SECONDS", default=300, cast=int)
+
 # ─────────────────────────────────────────
 # CORS
 # ─────────────────────────────────────────

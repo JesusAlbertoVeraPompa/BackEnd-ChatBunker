@@ -37,11 +37,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, text_data):
-        data = json.loads(text_data)
+        try:
+            data = json.loads(text_data)
+        except json.JSONDecodeError:
+            return
+
         action = data.get('action')
 
         if action == 'send_message':
-            # Guardar el mensaje (ciphertext) y retransmitir
+            encrypted_content = data.get('encrypted_content')
+            if not encrypted_content:
+                return
+
             message_obj = await self.save_message(data)
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -49,7 +56,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'type': 'chat_message',
                     'message_id': str(message_obj.id),
                     'sender': str(self.user.id),
-                    'content': data['encrypted_content'],
+                    'sender_email': self.user.email,
+                    'content': encrypted_content,
                     'msg_type': data.get('type', 'Text'),
                     'timestamp': str(message_obj.timestamp)
                 }

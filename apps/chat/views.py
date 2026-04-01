@@ -1,4 +1,5 @@
-from django.core.signing import Signer, BadSignature
+from django.conf import settings
+from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -8,9 +9,11 @@ from rest_framework.views import APIView
 from .models import Conversation, Message, Media, ChatInvitation
 from .serializers import ConversationSerializer, MessageSerializer, ChatInvitationSerializer
 from apps.accounts.models import User
-import os
 
-signer = Signer()
+from apps.core.responses import error_response, success_response
+
+signer = TimestampSigner(salt="chat-media-download")
+MEDIA_URL_SIGNED_TTL_SECONDS = getattr(settings, "MEDIA_URL_SIGNED_TTL_SECONDS", 300)
 
 class ChatInvitationView(APIView):
     """
@@ -22,23 +25,26 @@ class ChatInvitationView(APIView):
         # Lista las invitaciones recibidas que aún están pendientes
         invitations = ChatInvitation.objects.filter(receiver=request.user, status=ChatInvitation.InvitationStatus.PENDING)
         serializer = ChatInvitationSerializer(invitations, many=True, context={'request': request})
-        return Response(serializer.data)
+        return success_response(
+            message="Invitaciones obtenidas.",
+            data=serializer.data
+        )
 
     def post(self, request):
         # Enviar una nueva invitación
         target_email = request.data.get('email')
         if not target_email:
-            return Response({"error": "Debe proporcionar el email del usuario."}, status=status.HTTP_400_BAD_REQUEST)
+            return error_response(message="Debe proporcionar el email.", status_code=status.HTTP_400_BAD_REQUEST)
         
         target_user = get_object_or_404(User, email=target_email, is_active=True)
         
         if target_user == request.user:
-            return Response({"error": "No puedes invitarte a ti mismo."}, status=status.HTTP_400_BAD_REQUEST)
+            return error_response(message="No puedes invitarte a ti mismo.", status_code=status.HTTP_400_BAD_REQUEST)
 
         # Verificar si ya existe un chat entre ambos
         already_friends = Conversation.objects.filter(participants=request.user).filter(participants=target_user).exists()
         if already_friends:
-            return Response({"error": "Ya tienes una conversación con este usuario."}, status=status.HTTP_400_BAD_REQUEST)
+            return error_response(message="Ya tienes una conversación con este usuario.", status_code=status.HTTP_400_BAD_REQUEST)
 
         # Crear invitación (o recuperar si ya estaba pendiente)
         invitation, created = ChatInvitation.objects.get_or_create(
@@ -52,7 +58,11 @@ class ChatInvitationView(APIView):
             invitation.status = ChatInvitation.InvitationStatus.PENDING
             invitation.save()
 
-        return Response(ChatInvitationSerializer(invitation).data, status=status.HTTP_201_CREATED)
+        return success_response(
+            message="Invitación enviada correctamente.",
+            data=ChatInvitationSerializer(invitation).data,
+            status_code=status.HTTP_201_CREATED
+        )
 
 class AcceptInvitationView(APIView):
     """
@@ -163,7 +173,12 @@ class MediaSignedUrlView(APIView):
         from django.urls import reverse
         download_url = f"{request.build_absolute_uri(reverse('media-download'))}?token={token}"
         
-        return Response({"download_url": download_url})
+        return Response(
+            {
+                "download_url": download_url,
+                "expires_in_seconds": MEDIA_URL_SIGNED_TTL_SECONDS,
+            }
+        )
 
 class MediaDownloadView(APIView):
     """
@@ -180,7 +195,7 @@ class MediaDownloadView(APIView):
         try:
             # 1. Verificar firma (lanzará BadSignature si es inválido o alterado)
             # expiración implícita si añadimos timestamps a la firma
-            media_id = signer.unsign(token)
+            media_id = signer.unsign(token, max_age=MEDIA_URL_SIGNED_TTL_SECONDS)
             media = get_object_or_404(Media, id=media_id)
             
             # 2. Servir el archivo como stream binario
@@ -188,5 +203,9 @@ class MediaDownloadView(APIView):
             response['Content-Type'] = 'application/octet-stream' # Binario cifrado
             return response
             
-        except (BadSignature, Exception):
-            return Response({"error": "Enlace inválido o expirado."}, status=status.HTTP_403_FORBIDDEN)
+        except SignatureExpired:
+            return Response({"error": "Enlace expirado."}, status=status.HTTP_403_FORBIDDEN)
+        except BadSignature:
+            return Response({"error": "Enlace invalido o expirado."}, status=status.HTTP_403_FORBIDDEN)
+        except Exception:
+            return Response({"error": "No se pudo procesar el enlace de descarga."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
