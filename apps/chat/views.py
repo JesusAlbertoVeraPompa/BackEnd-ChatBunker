@@ -84,6 +84,18 @@ class AcceptInvitationView(APIView):
         
         return Response(ConversationSerializer(conversation, context={'request': request}).data)
 
+class RejectInvitationView(APIView):
+    """
+    Rechaza una invitación de chat.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        invitation = get_object_or_404(ChatInvitation, id=pk, receiver=request.user, status=ChatInvitation.InvitationStatus.PENDING)
+        invitation.status = ChatInvitation.InvitationStatus.REJECTED
+        invitation.save()
+        return Response({"message": "Invitación rechazada."}, status=status.HTTP_200_OK)
+
 class ConversationListView(APIView):
     """
     Lista todas las conversaciones en las que participa el usuario.

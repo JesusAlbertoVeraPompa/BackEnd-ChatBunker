@@ -8,6 +8,7 @@ urlpatterns = [
     # Invitations
     path('invitations/', views.ChatInvitationView.as_view(), name='invitation-list-create'),
     path('invitations/<uuid:pk>/accept/', views.AcceptInvitationView.as_view(), name='invitation-accept'),
+    path('invitations/<uuid:pk>/reject/', views.RejectInvitationView.as_view(), name='invitation-reject'),
 
     # E2EE Media access
     path('media/<uuid:media_id>/sign/', views.MediaSignedUrlView.as_view(), name='media-sign'),
