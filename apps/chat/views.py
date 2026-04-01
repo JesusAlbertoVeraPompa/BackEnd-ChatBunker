@@ -234,4 +234,3 @@ class MediaDownloadView(APIView):
             return Response({"error": "Enlace invalido o expirado."}, status=status.HTTP_403_FORBIDDEN)
         except Exception:
             return Response({"error": "No se pudo procesar el enlace de descarga."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-NAL_SERVER_ERROR)
