@@ -131,8 +131,6 @@ CSP_SCRIPT_SRC = ("'self'",)
 CSP_IMG_SRC = ("'self'", "data:")
 CSP_CONNECT_SRC = ("'self'", "ws:", "wss:") # Permite WebSockets
 
-SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"
-
 
 # ─────────────────────────────────────────
 # DATABASE (MySQL)
